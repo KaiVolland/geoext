@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>GeoExt.component.OverviewMap Example</title>
+    <link rel="stylesheet" type="text/css" href="http://openlayers.org/en/master/css/ol.css">
+    <link rel="stylesheet" type="text/css" href="http://cdn.sencha.com/ext/gpl/5.1.0/packages/ext-theme-crisp/build/resources/ext-theme-crisp-all.css"/>
+</head>
+
+<link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+<body>
+
+    <div id='description'>
+        <p>
+            This example shows how to use the
+            <code>GeoExt.component.CircleMenu</code> class.
+        </p>
+        <p>
+            Have a look at <a href="circleMenu.js">circleMenu.js</a> to see
+            how this is done.
+        </p>
+    </div>
+
+    <script src="http://openlayers.org/en/master/build/ol-debug.js"></script>
+    <script src="http://cdn.sencha.com/ext/gpl/5.1.0/build/ext-all.js"></script>
+    <script>
+            Ext.Loader.setConfig({
+                enabled: true,
+                paths: {
+                    'GeoExt': '../../src/'
+                }
+            });
+    </script>
+
+    <script src="circleMenu.js"></script>
+    <!-- Automatically reload on source changes, just append #reload to URL -->
+    <script src="../../util/live-reload.js"></script>
+</body>
+</html>
