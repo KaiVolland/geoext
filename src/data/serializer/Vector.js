@@ -382,7 +382,9 @@ Ext.define('GeoExt.data.serializer.Vector', {
                 if (Ext.isDefined(src)) {
                     symbolizer = {
                         type: 'point',
-                        externalGraphic: src
+                        externalGraphic: src,
+                        graphicWidth: imageStyle.getImageSize()[0],
+                        graphicHeight: imageStyle.getImageSize()[1]
                     };
                     var rotation = imageStyle.getRotation();
                     if (rotation !== 0) {
@@ -462,6 +464,12 @@ Ext.define('GeoExt.data.serializer.Vector', {
                 // Mapfish uses the opposite direction of OpenLayers for y
                 // axis, so the minus sign is required for the y offset to
                 // be identical.
+                symbolizer.labelYOffset = -textStyle.getOffsetY();
+            // Mapfish uses a default Offset for Text with 5px for x and y axis.
+            } else if (textStyle.getOffsetX() === 0 &&
+                textStyle.getOffsetY() === 0){
+                symbolizer.labelAlign = "cm";
+                symbolizer.labelXOffset = textStyle.getOffsetX();
                 symbolizer.labelYOffset = -textStyle.getOffsetY();
             }
 
