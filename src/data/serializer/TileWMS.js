@@ -50,7 +50,7 @@ Ext.define('GeoExt.data.serializer.TileWMS', {
                 "layers": [
                     source.getParams().LAYERS
                 ],
-                "serverType": source.serverType,
+//                "serverType": source.serverType,
                 "opacity": layer.getOpacity(),
                 "styles": [ "" ],
                 "type": "WMS"
