@@ -969,12 +969,10 @@ Ext.define('GeoExt.data.store.Layers', {
         'ol.Collection#forEach',
         'ol.Collection#getArray',
         'ol.Collection#insertAt',
-        'ol.Collection#on',
         'ol.Collection#push',
         'ol.Collection#remove',
         'ol.layer.Layer',
         'ol.layer.Layer#get',
-        'ol.layer.Layer#on',
         'ol.layer.Layer#set',
         'ol.Map',
         'ol.Map#getLayers'
@@ -3438,6 +3436,48 @@ Ext.define('GeoExt.data.MapfishPrintProvider', {
     }
 });
 
+/* Copyright (c) 2022-present The Open Source Geospatial Foundation
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/**
+ * The ArcGISRestServiceLayer model class used by the stores.
+ *
+ * @class GeoExt.data.model.ArcGISRestServiceLayer
+ */
+Ext.define('GeoExt.data.model.ArcGISRestServiceLayer', {
+    extend: 'GeoExt.data.model.Base',
+    fields: [
+        {
+            name: 'layerId',
+            type: 'int'
+        },
+        {
+            name: 'name',
+            type: 'string'
+        },
+        {
+            name: 'defaultVisibility',
+            type: 'boolean'
+        },
+        {
+            name: 'visibility',
+            type: 'boolean'
+        }
+    ]
+});
+
 /* Copyright (c) 2015-present The Open Source Geospatial Foundation
  *
  * This program is free software: you can redistribute it and/or modify
@@ -4393,10 +4433,10 @@ Ext.define('GeoExt.data.serializer.Vector', {
             } else if (imageStyle instanceof ol.style.Icon) {
                 var src = imageStyle.getSrc();
                 if (Ext.isDefined(src)) {
-                    var img = imageStyle.getImage();
+                    var img = imageStyle.getImage(window.devicePixelRatio || 1);
                     var canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
                     canvas.getContext('2d').drawImage(img, 0, 0);
                     var format = 'image/' + src.match(/\.(\w+)$/)[1];
                     symbolizer = {
@@ -4453,15 +4493,15 @@ Ext.define('GeoExt.data.serializer.Vector', {
             }
             var fontStyle = textStyle.getFont();
             if (Ext.isDefined(fontStyle)) {
-                var font = fontStyle.split(' ');
-                if (font.length >= 3) {
-                    symbolizer.fontWeight = font[0];
-                    symbolizer.fontSize = font[1];
-                    symbolizer.fontFamily = font.splice(2).join(' ');
-                }
+                var el = document.createElement('span');
+                el.style.font = fontStyle;
+                symbolizer.fontWeight = el.style.fontWeight;
+                symbolizer.fontSize = el.style.fontSize;
+                symbolizer.fontFamily = el.style.fontFamily;
+                symbolizer.fontStyle = el.style.fontStyle;
             }
             var strokeStyle = textStyle.getStroke();
-            if (strokeStyle !== null) {
+            if (strokeStyle !== null && strokeStyle.getColor()) {
                 var strokeColor = strokeStyle.getColor();
                 var strokeColorRgba = ol.color.asArray(strokeColor);
                 symbolizer.haloColor = this.rgbArrayToHex(strokeColorRgba);
@@ -4472,7 +4512,7 @@ Ext.define('GeoExt.data.serializer.Vector', {
                 }
             }
             var fillStyle = textStyle.getFill();
-            if (fillStyle !== null) {
+            if (fillStyle !== null && fillStyle.getColor()) {
                 var fillColorRgba = ol.color.asArray(fillStyle.getColor());
                 symbolizer.fontColor = this.rgbArrayToHex(fillColorRgba);
             }
@@ -4818,6 +4858,34 @@ Ext.define('GeoExt.data.serializer.XYZ', {
     cls.register(cls);
 });
 
+/* Copyright (c) 2022-present The Open Source Geospatial Foundation
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+/**
+ * Store that contains information about ArcGIS REST service layers.
+ *
+ * @class GeoExt.data.store.ArcGISRestServiceLayer
+ */
+Ext.define('GeoExt.data.store.ArcGISRestServiceLayer', {
+    extend: 'Ext.data.Store',
+    requires: [
+        'GeoExt.data.model.ArcGISRestServiceLayer'
+    ],
+    model: 'GeoExt.data.model.ArcGISRestServiceLayer'
+});
+
 /* Copyright (c) 2015-present The Open Source Geospatial Foundation
  *
  * This program is free software: you can redistribute it and/or modify
@@ -5061,7 +5129,7 @@ Ext.define('GeoExt.data.store.Features', {
             }
             cfg.data = cfg.features;
         } else {
-            if (!(cfg.layer instanceof ol.layer.Vector)) {
+            if (!(cfg.layer instanceof ol.layer.BaseVector)) {
                 throw new Error('Layer is no vector layer. ' + configErrorMessage);
             }
             if (!cfg.layer.getSource()) {
@@ -6304,6 +6372,8 @@ Ext.define('GeoExt.data.store.WfsFeatures', {
         // (if needed)
         var createLayer = config.createLayer;
         config.createLayer = false;
+        config.passThroughFilter = false;
+        // only has effect for layers
         me.callParent([
             config
         ]);
@@ -7353,7 +7423,7 @@ Ext.define('GeoExt.selection.FeatureModelMixin', {
     selectMapFeature: function(feature) {
         var me = this;
         var row = me.store.findBy(function(record, id) {
-                return record.getFeature() == feature;
+                return record.getFeature() === feature;
             });
         // deselect all if only one can be selected at a time
         if (me.getSelectionMode() === 'SINGLE') {
@@ -7364,7 +7434,7 @@ Ext.define('GeoExt.selection.FeatureModelMixin', {
             me.deselect(row);
         } else {
             // select the feature by selecting grid row
-            if (row != -1 && !me.isSelected(row)) {
+            if (row !== -1 && !me.isSelected(row)) {
                 me.select(row, !this.singleSelect);
                 // focus the row in the grid to ensure it is visible
                 me.view.focusRow(row);

@@ -401,10 +401,10 @@ Ext.define('GeoExt.data.serializer.Vector', {
             } else if (imageStyle instanceof ol.style.Icon) {
                 var src = imageStyle.getSrc();
                 if (Ext.isDefined(src)) {
-                    var img = imageStyle.getImage();
+                    var img = imageStyle.getImage(window.devicePixelRatio || 1);
                     var canvas = document.createElement('canvas');
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
                     canvas.getContext('2d').drawImage(img, 0, 0);
                     var format = 'image/' + src.match(/\.(\w+)$/)[1];
                     symbolizer = {
@@ -466,17 +466,20 @@ Ext.define('GeoExt.data.serializer.Vector', {
             }
 
             var fontStyle = textStyle.getFont();
+
             if (Ext.isDefined(fontStyle)) {
-                var font = fontStyle.split(' ');
-                if (font.length >= 3) {
-                    symbolizer.fontWeight = font[0];
-                    symbolizer.fontSize = font[1];
-                    symbolizer.fontFamily = font.splice(2).join(' ');
-                }
+
+                var el = document.createElement('span');
+                el.style.font = fontStyle;
+
+                symbolizer.fontWeight = el.style.fontWeight;
+                symbolizer.fontSize = el.style.fontSize;
+                symbolizer.fontFamily = el.style.fontFamily;
+                symbolizer.fontStyle = el.style.fontStyle;
             }
 
             var strokeStyle = textStyle.getStroke();
-            if (strokeStyle !== null) {
+            if (strokeStyle !== null && strokeStyle.getColor()) {
                 var strokeColor = strokeStyle.getColor();
                 var strokeColorRgba = ol.color.asArray(strokeColor);
                 symbolizer.haloColor = this.rgbArrayToHex(strokeColorRgba);
@@ -488,7 +491,7 @@ Ext.define('GeoExt.data.serializer.Vector', {
             }
 
             var fillStyle = textStyle.getFill();
-            if (fillStyle !== null) {
+            if (fillStyle !== null && fillStyle.getColor()) {
                 var fillColorRgba = ol.color.asArray(fillStyle.getColor());
                 symbolizer.fontColor = this.rgbArrayToHex(fillColorRgba);
             }

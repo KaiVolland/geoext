@@ -418,10 +418,10 @@ Ext.define(&#39;GeoExt.data.serializer.Vector&#39;, {
             } else if (imageStyle instanceof ol.style.Icon) {
                 var src = imageStyle.getSrc();
                 if (Ext.isDefined(src)) {
-                    var img = imageStyle.getImage();
+                    var img = imageStyle.getImage(window.devicePixelRatio || 1);
                     var canvas = document.createElement(&#39;canvas&#39;);
-                    canvas.width = img.naturalWidth;
-                    canvas.height = img.naturalHeight;
+                    canvas.width = img.naturalWidth || img.width;
+                    canvas.height = img.naturalHeight || img.height;
                     canvas.getContext(&#39;2d&#39;).drawImage(img, 0, 0);
                     var format = &#39;image/&#39; + src.match(/\.(\w+)$/)[1];
                     symbolizer = {
@@ -483,17 +483,20 @@ Ext.define(&#39;GeoExt.data.serializer.Vector&#39;, {
             }
 
             var fontStyle = textStyle.getFont();
+
             if (Ext.isDefined(fontStyle)) {
-                var font = fontStyle.split(&#39; &#39;);
-                if (font.length &gt;= 3) {
-                    symbolizer.fontWeight = font[0];
-                    symbolizer.fontSize = font[1];
-                    symbolizer.fontFamily = font.splice(2).join(&#39; &#39;);
-                }
+
+                var el = document.createElement(&#39;span&#39;);
+                el.style.font = fontStyle;
+
+                symbolizer.fontWeight = el.style.fontWeight;
+                symbolizer.fontSize = el.style.fontSize;
+                symbolizer.fontFamily = el.style.fontFamily;
+                symbolizer.fontStyle = el.style.fontStyle;
             }
 
             var strokeStyle = textStyle.getStroke();
-            if (strokeStyle !== null) {
+            if (strokeStyle !== null &amp;&amp; strokeStyle.getColor()) {
                 var strokeColor = strokeStyle.getColor();
                 var strokeColorRgba = ol.color.asArray(strokeColor);
                 symbolizer.haloColor = this.rgbArrayToHex(strokeColorRgba);
@@ -505,7 +508,7 @@ Ext.define(&#39;GeoExt.data.serializer.Vector&#39;, {
             }
 
             var fillStyle = textStyle.getFill();
-            if (fillStyle !== null) {
+            if (fillStyle !== null &amp;&amp; fillStyle.getColor()) {
                 var fillColorRgba = ol.color.asArray(fillStyle.getColor());
                 symbolizer.fontColor = this.rgbArrayToHex(fillColorRgba);
             }
